@@ -9,8 +9,18 @@ const cookieParser = require('cookie-parser');
 const app = express();
 
 const corsOptions = {
-  origin: ['http://localhost:3000'], 
-  credentials: true,               
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://square-habit-frontend.vercel.app'
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
 };
 
 app.use(cors(corsOptions));       
