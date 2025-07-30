@@ -25,7 +25,7 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error(err));
 
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.send('SquareHabit API is running');
 });
 
