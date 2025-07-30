@@ -18,8 +18,8 @@ app.use(cors(corsOptions));
 app.use(cookieParser());           
 app.use(express.json());           
 
-app.use('api/', userRoutes);
-app.use('api/', habitRoutes);
+app.use('/api', userRoutes);
+app.use('/api', habitRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
