@@ -28,6 +28,15 @@ mongoose.connect(process.env.MONGO_URI)
 app.get('/', (req, res) => {
   res.send('SquareHabit API is running');
 });
+app.get('/test-cookie', (req, res) => {
+  res.cookie('test', 'working', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'None',
+  });
+  res.send('Test cookie set.');
+});
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
