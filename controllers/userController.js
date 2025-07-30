@@ -13,46 +13,52 @@ const register = async (req, res) => {
 
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-
     const user = new User ({
       name,
       email, 
       password: hashedPassword,
     });
-
+    console.log(user, 'new user')
     await user.save();
-
+    console.log(user, 'user saved')
     res.status(201).json({ message: 'User Created Successfully', userId: user._id });
   } catch (error) {
-    res.status(500).json({ error: 'Something Went Wrong' })
+    console.error("Error in register controller:", error);  
+  res.status(500).json({ error: 'Something Went Wrong', details: error.message });
   }
 };
 
 const loginUser = async (req, res) => {
-
   try {
-    const { email, password} = req.body;
+    const { email, password } = req.body;
     const user = await User.findOne({ email });
-    
-    if(!user) {
-      return res.status(400).json({error: 'No User Found'})
-    };
-    
-    const isMatch = await bcrypt.compare(password, user.password)
 
-    // JWT TOKEN
-    const token = jwt.sign(
-      { userId: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
-    res.status(200).json({
-      message: 'Login Success',
-      token,
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '1h',
     });
-  }catch(error) {
-    res.status(500).json({error: 'Error'})
+
+    res
+      .cookie('token', token, {
+        httpOnly: true,
+        secure: false, 
+        sameSite: 'Lax', 
+        maxAge: 60 * 60 * 1000, 
+      })
+      .json({ message: 'Login successful' });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -70,11 +76,44 @@ const getUserInfo = async (req, res) => {
   }catch (error) {
     res.status(500).json({error: 'Error'})
   }
-}
+};
+
+const logoutUser = async (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'Lax',
+  });
+  return res.status(200).json({ message: 'Logged out Successfully' });
+};
+
+const getDashboard = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if(!user) {
+      return res.status(404).json({ error: 'User not found!' });
+    }
+
+    res.status(200).json({
+      message: 'Authorized Access To Dashboard',
+      user,
+    });
+  } catch (err) {
+    console.error('Dashboard Error', err);
+    res.status(500).json({ error: 'Server error' });
+  };
+};
+
+const checkAuth = async (req, res) => {
+  res.status(200).json({ message: 'Authenticated' });
+};
 
 
 module.exports = {
   register,
   loginUser,
   getUserInfo,
+  logoutUser,
+  getDashboard,
+  checkAuth,
 };

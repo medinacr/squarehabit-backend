@@ -4,12 +4,21 @@ const cors = require('cors');
 require('dotenv').config();
 const userRoutes = require('./routes/userRoutes');
 const habitRoutes = require('./routes/habitRoutes');
+const cookieParser = require('cookie-parser');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-app.use('/api/users', userRoutes)
-app.use('/api/habits', habitRoutes)
+
+const corsOptions = {
+  origin: ['http://localhost:3000'], 
+  credentials: true,               
+};
+
+app.use(cors(corsOptions));       
+app.use(cookieParser());           
+app.use(express.json());           
+
+app.use('/', userRoutes);
+app.use('/', habitRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
