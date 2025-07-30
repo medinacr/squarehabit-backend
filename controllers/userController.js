@@ -29,38 +29,26 @@ const register = async (req, res) => {
 };
 
 const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
 
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
+  if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
-    const isMatch = await bcrypt.compare(password, user.password);
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '1h',
-    });
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'None',
+    maxAge: 86400000,
+  });
 
-    res
-      .cookie('token', token, {
-        httpOnly: true,
-        secure: true, 
-        sameSite: 'None', 
-        maxAge: 60 * 60 * 1000, 
-      })
-      .json({ message: 'Login successful' });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  return res.status(200).json({ message: 'Login successful' }); // <-- fine
 };
+
 
 const getUserInfo = async (req, res) => {
   try {
